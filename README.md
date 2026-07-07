@@ -59,7 +59,7 @@ sistem_monitoring_rfid/
 ├── gkibrmpa_rfidpatrol.sql  # Dump struktur & data awal basis data
 ├── Dockerfile               # Image aplikasi (PHP + CodeIgniter 4)
 ├── docker-compose.yml       # Orkestrasi service app & database
-├── .env.example             # Contoh konfigurasi environment
+├── env                      # Contoh konfigurasi environment (bawaan CodeIgniter 4)
 └── README.md
 ```
 
@@ -79,15 +79,21 @@ sistem_monitoring_rfid/
 
 2. **Salin file environment**
    ```bash
-   cp .env.example .env
+   cp env .env
    ```
-   Sesuaikan variabel berikut sesuai kebutuhan (harus konsisten dengan `docker-compose.yml`):
+   Buka file `.env` lalu sesuaikan (minimal) bagian berikut agar konsisten dengan `docker-compose.yml`:
+   ```dotenv
+   CI_ENVIRONMENT = development
+
+   app.baseURL = 'http://localhost:8080/'
+
+   database.default.hostname = db
+   database.default.database = rfid_patroli
+   database.default.username = rfid_user
+   database.default.password = rfid_pass
+   database.default.DBDriver = MySQLi
    ```
-   DB_HOST=db
-   DB_DATABASE=rfid_patroli_local
-   DB_USERNAME=rfid_dev
-   DB_PASSWORD=dev12345
-   ```
+   > Catatan: konfigurasi CodeIgniter 4 memakai format titik (`key.subkey = value`), bukan `KEY=VALUE`. `hostname` harus diisi `db` (nama service MySQL di `docker-compose.yml`), bukan `localhost`, karena aplikasi dan database berjalan di container terpisah.
 
 3. **Build & jalankan container**
    ```bash
@@ -101,16 +107,16 @@ sistem_monitoring_rfid/
 
    Linux/macOS/CMD:
    ```bash
-   docker exec -i rfid_patroli_db mysql -u rfid_dev -pdev12345 rfid_patroli_local < gkibrmpa_rfidpatrol.sql
+   docker exec -i rfid_patroli_db mysql -u rfid_user -prfid_pass rfid_patroli < gkibrmpa_rfidpatrol.sql
    ```
    PowerShell (Windows):
    ```powershell
-   Get-Content gkibrmpa_rfidpatrol.sql | docker exec -i rfid_patroli_db mysql -u rfid_dev -pdev12345 rfid_patroli_local
+   Get-Content gkibrmpa_rfidpatrol.sql | docker exec -i rfid_patroli_db mysql -u rfid_user -prfid_pass rfid_patroli
    ```
 
 5. **Verifikasi import berhasil**
    ```bash
-   docker exec -i rfid_patroli_db mysql -u rfid_dev -pdev12345 rfid_patroli_local -e "SHOW TABLES;"
+   docker exec -i rfid_patroli_db mysql -u rfid_user -prfid_pass rfid_patroli -e "SHOW TABLES;"
    ```
    Pastikan 12 tabel (users, kartu_rfid, kunjungan, dll.) muncul.
 
