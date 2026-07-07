@@ -1,69 +1,154 @@
-# CodeIgniter 4 Application Starter
+# Sistem Monitoring Kunjungan Ruangan oleh Security Berbasis RFID untuk Pelaporan Terintegrasi
 
-## What is CodeIgniter?
+**Tugas Akhir — Program Studi Informatika**
+Fakultas Sains dan Teknologi, Universitas Bhinneka Nusantara (UBHINUS)
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+**Penyusun:** Gabriel Patrick Wahyu Mazmur Ariaji (221111002)
+**Dosen Pembimbing:** Jozua Ferjanus Palandi, S.Kom., M.Kom.
+**Studi Kasus:** Gereja GKI Bromo, Malang
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+---
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+## 📌 Deskripsi Aplikasi
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+Pencatatan patroli keamanan yang masih dilakukan secara manual menyebabkan data kunjungan rentan terhadap kesalahan, manipulasi, dan sulit diverifikasi secara objektif. **RFID Patrol** adalah sistem monitoring kunjungan ruangan oleh petugas keamanan (security) berbasis **RFID** dan **mikrokontroler ESP32**, yang dirancang untuk merekam identitas petugas, waktu, dan lokasi kunjungan secara otomatis dan real-time, sekaligus memvalidasi kesesuaian jadwal shift serta urutan rute patroli.
 
-## Installation & updates
+Validasi urutan rute patroli dilakukan menggunakan algoritma **Longest Common Subsequence (LCS)**, yaitu dengan membandingkan urutan ruangan yang di-scan secara aktual terhadap urutan ideal yang telah ditetapkan, sehingga tingkat kepatuhan petugas terhadap rute dapat diukur secara kuantitatif dan objektif.
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+Hasil kunjungan disajikan melalui aplikasi web dengan dua peran pengguna:
+- **Administrator** — memantau dan mengelola seluruh data patroli, pengguna, perangkat, jadwal, dan laporan evaluasi.
+- **Petugas Security** — melihat jadwal dan riwayat kunjungannya sendiri melalui dashboard pribadi.
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+## ✨ Fitur Utama
 
-## Setup
+Sistem terdiri atas delapan modul fungsional utama:
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+1. **Autentikasi** — login berbasis peran (Administrator / Petugas) dengan validasi kredensial.
+2. **Dashboard Administrator** — statistik total pengguna aktif, total perangkat, jumlah scan hari ini, jumlah kartu asing terdeteksi, grafik aktivitas scan 30 hari terakhir, live log scan terbaru, status perangkat, dan jadwal shift hari ini.
+3. **Manajemen Pengguna** — CRUD data pengguna beserta foto profil, peran, dan UID kartu RFID terhubung, dengan validasi duplikasi di sisi server.
+4. **Manajemen Perangkat** — pemantauan status setiap unit ESP32 (Online/Offline/Maintenance), tipe perangkat, ruangan, alamat IP, dan waktu terakhir online.
+5. **Log RFID** — riwayat seluruh aktivitas scan dari seluruh perangkat, dengan filter tanggal, jenis kartu, status validasi, dan ekspor ke CSV/Excel/PDF; diperbarui otomatis via live polling.
+6. **Jadwal Patroli** — kalender bulanan interaktif untuk penjadwalan shift dan dua petugas bertugas, lengkap dengan ekspor jadwal ke Excel.
+7. **Laporan & Evaluasi LCS** — evaluasi kepatuhan rute patroli per sesi shift (persentase coverage, nilai LCS, status Valid/Normal/Warning/Tidak Lengkap), dengan opsi evaluasi ulang manual dan ekspor Excel.
+8. **Dashboard Petugas** — statistik pribadi (jadwal bulan ini, jadwal hari ini, scan berhasil, titik terlewat), kalender jadwal pribadi, riwayat aktivitas, dan unduh jadwal dinas dalam format Excel.
 
-## Important Change with index.php
+Pada sisi perangkat keras, setiap unit ESP32 memberikan umpan balik langsung kepada petugas melalui **LCD** dan **buzzer** (pola bunyi berbeda untuk status: sesuai jadwal, tidak sesuai urutan, tidak terjadwal, atau kartu tidak dikenali).
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+## 🛠️ Teknologi yang Digunakan
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+| Kategori | Teknologi |
+|---|---|
+| Mikrokontroler | ESP32 (varian 38-pin & 30-pin) |
+| Modul RFID | MFRC522 (protokol SPI) |
+| Firmware | Arduino C++ (Arduino IDE) |
+| Backend & Web Dashboard | PHP 8, Framework **CodeIgniter 4** (REST API + MVC) |
+| Basis Data | **MySQL** / MariaDB (relasional, 12 entitas) |
+| Algoritma Evaluasi | Longest Common Subsequence (LCS) — Dynamic Programming |
+| Kontainerisasi | **Docker** & Docker Compose |
 
-**Please** read the user guide for a better explanation of how CI4 works!
+### Struktur Basis Data (12 Entitas)
 
-## Repository Management
+`users`, `roles`, `kartu_rfid`, `perangkat_rfid`, `ruangan`, `shift`, `jadwal_shift`, `kunjungan`, `patroli_hasil`, `patroli_lcs_log`, `patroli_titik_terlewat`, `log_sistem`.
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+## 📂 Struktur Repository
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+```
+sistem_monitoring_rfid/
+├── app/                     # Source code aplikasi CodeIgniter 4
+├── firmware/                # Kode firmware ESP32 (Arduino C++)
+├── gkibrmpa_rfidpatrol.sql  # Dump struktur & data awal basis data
+├── Dockerfile               # Image aplikasi (PHP + CodeIgniter 4)
+├── docker-compose.yml       # Orkestrasi service app & database
+├── .env.example             # Contoh konfigurasi environment
+└── README.md
+```
 
-## Server Requirements
+## 🚀 Instalasi & Menjalankan Aplikasi (via Docker)
 
-PHP version 8.2 or higher is required, with the following extensions installed:
+### Prasyarat
+- [Docker](https://www.docker.com/) & Docker Compose sudah terpasang
+- Git
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+### Langkah-langkah
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - The end of life date for PHP 8.1 was December 31, 2025.
-> - If you are still using below PHP 8.2, you should upgrade immediately.
-> - The end of life date for PHP 8.2 will be December 31, 2026.
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/Mazmurgthski/sistem-monitoring-kunjungan-rfid.git
+   cd sistem-monitoring-kunjungan-rfid
+   ```
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+2. **Salin file environment**
+   ```bash
+   cp .env.example .env
+   ```
+   Sesuaikan variabel berikut sesuai kebutuhan (harus konsisten dengan `docker-compose.yml`):
+   ```
+   DB_HOST=db
+   DB_DATABASE=rfid_patroli_local
+   DB_USERNAME=rfid_dev
+   DB_PASSWORD=dev12345
+   ```
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+3. **Build & jalankan container**
+   ```bash
+   docker compose up -d --build
+   ```
+   Perintah ini akan menyiapkan dua container:
+   - `rfid_patroli_app` — aplikasi web (CodeIgniter 4), diakses pada `http://localhost:8080`
+   - `rfid_patroli_db` — basis data MySQL, expose pada port `3307`
+
+4. **Import struktur & data awal basis data**
+
+   Linux/macOS/CMD:
+   ```bash
+   docker exec -i rfid_patroli_db mysql -u rfid_dev -pdev12345 rfid_patroli_local < gkibrmpa_rfidpatrol.sql
+   ```
+   PowerShell (Windows):
+   ```powershell
+   Get-Content gkibrmpa_rfidpatrol.sql | docker exec -i rfid_patroli_db mysql -u rfid_dev -pdev12345 rfid_patroli_local
+   ```
+
+5. **Verifikasi import berhasil**
+   ```bash
+   docker exec -i rfid_patroli_db mysql -u rfid_dev -pdev12345 rfid_patroli_local -e "SHOW TABLES;"
+   ```
+   Pastikan 12 tabel (users, kartu_rfid, kunjungan, dll.) muncul.
+
+6. **Akses aplikasi**
+
+   Buka browser dan kunjungi:
+   ```
+   http://localhost:8080
+   ```
+
+### Menghentikan aplikasi
+```bash
+docker compose down
+```
+
+## 📡 Konfigurasi Firmware ESP32
+
+Firmware diunggah melalui Arduino IDE dan memerlukan konfigurasi berikut pada masing-masing perangkat:
+
+- SSID & password WiFi lokal
+- `serverUrl` — mengarah ke alamat host tempat aplikasi web dijalankan (mis. `http://<IP-server>:8080`)
+- `alatId` — kode unik perangkat (mis. `DEVICE_01`)
+
+Endpoint yang digunakan perangkat untuk mengirim hasil scan:
+```
+POST /api/rfid/scan
+Content-Type: application/json
+
+{ "uid_rfid": "<UID_HEX>", "alat_id": "<ID_PERANGKAT>" }
+```
+
+## 👥 Aktor Sistem
+
+| Aktor | Deskripsi |
+|---|---|
+| **Petugas Keamanan** | Melakukan tapping kartu RFID di setiap titik ruangan sesuai jadwal patroli; memantau jadwal dan riwayat aktivitas pribadi. |
+| **Administrator** | Mengelola data pengguna, perangkat, dan jadwal patroli; memantau aktivitas scan real-time; mengevaluasi kepatuhan rute via laporan LCS. |
+
+## 📄 Lisensi & Sitasi
+
+Proyek ini merupakan bagian dari Tugas Akhir pada Program Studi Informatika, Fakultas Sains dan Teknologi, Universitas Bhinneka Nusantara, 2026. Dikembangkan sesuai **Buku Panduan Pengajuan Seminar Akhir TA** (Nomor Dokumen: 03/SAINTEK.PANDUAN/UBHINUS/IV/2026), termasuk ketentuan standarisasi teknis Bab III mengenai penggunaan repository GitHub dan Docker.
